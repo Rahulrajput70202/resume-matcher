@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resume Matcher — Scan Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="scanlines" aria-hidden="true"></div>
+
+<!-- ===================== AUTH SCREEN ===================== -->
+<main id="auth-screen" class="auth-wrap">
+  <div class="auth-card">
+    <div class="brand">
+      <span class="brand-mark">◎</span>
+      <span class="brand-name">RESUME<span class="brand-accent">/</span>MATCHER</span>
+    </div>
+    <p class="brand-tagline">Diagnostic scan for resume &amp; job-description fit.</p>
+
+    <div class="tab-row" role="tablist">
+      <button class="tab active" id="tab-login" role="tab" aria-selected="true">Log in</button>
+      <button class="tab" id="tab-register" role="tab" aria-selected="false">Register</button>
+    </div>
+
+    <form id="login-form" class="auth-form">
+      <label class="field-label" for="login-username">Username</label>
+      <input class="field-input" id="login-username" name="username" type="text" autocomplete="username" required>
+
+      <label class="field-label" for="login-password">Password</label>
+      <input class="field-input" id="login-password" name="password" type="password" autocomplete="current-password" required>
+
+      <button class="btn btn-primary" type="submit">Log in</button>
+    </form>
+
+    <form id="register-form" class="auth-form hidden">
+      <label class="field-label" for="register-username">Username</label>
+      <input class="field-input" id="register-username" name="username" type="text" autocomplete="username" required minlength="3">
+
+      <label class="field-label" for="register-email">Email</label>
+      <input class="field-input" id="register-email" name="email" type="email" autocomplete="email" required>
+
+      <label class="field-label" for="register-password">Password</label>
+      <input class="field-input" id="register-password" name="password" type="password" autocomplete="new-password" required minlength="6">
+
+      <button class="btn btn-primary" type="submit">Create account</button>
+    </form>
+
+    <p class="auth-status" id="auth-status" role="status" aria-live="polite"></p>
+  </div>
+</main>
+
+<!-- ===================== APP SCREEN ===================== -->
+<main id="app-screen" class="app-wrap hidden">
+
+  <header class="app-header">
+    <div class="brand">
+      <span class="brand-mark">◎</span>
+      <span class="brand-name">RESUME<span class="brand-accent">/</span>MATCHER</span>
+    </div>
+    <div class="header-right">
+      <span class="session-user"><span class="dim">operator</span> <span id="current-username">—</span></span>
+      <button class="btn btn-ghost" id="logout-btn">Log out</button>
+    </div>
+  </header>
+
+  <div class="console-grid">
+
+    <!-- LEFT: INPUT CONSOLE -->
+    <section class="panel input-panel">
+      <div class="panel-eyebrow">01 / INPUT</div>
+      <h2 class="panel-title">Load subject</h2>
+
+      <form id="analyze-form">
+        <label class="field-label" for="job-title">Job title</label>
+        <input class="field-input" id="job-title" name="jobTitle" type="text" placeholder="e.g. Java Developer" required>
+
+        <label class="field-label" for="job-description">Job description</label>
+        <textarea class="field-input field-textarea" id="job-description" name="jobDescription" rows="8" placeholder="Paste the full job description here…" required></textarea>
+
+        <label class="field-label">Resume (PDF)</label>
+        <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Upload resume PDF">
+          <input type="file" id="resume-file" accept="application/pdf" class="visually-hidden" required>
+          <div class="dropzone-inner" id="dropzone-inner">
+            <span class="dropzone-icon">⇩</span>
+            <span class="dropzone-text">Drop PDF here or <span class="dropzone-link">browse</span></span>
+            <span class="dropzone-file" id="dropzone-filename"></span>
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-block" type="submit" id="analyze-btn">Run scan</button>
+      </form>
+
+      <p class="console-log" id="console-log" role="status" aria-live="polite"></p>
+    </section>
+
+    <!-- RIGHT: REPORT READOUT -->
+    <section class="panel report-panel">
+      <div class="panel-eyebrow">02 / REPORT</div>
+      <h2 class="panel-title">Scan readout</h2>
+
+      <div id="report-empty" class="report-empty">
+        <span class="report-empty-mark">◌</span>
+        <p>No scan yet. Load a job description and resume, then run the scan.</p>
+      </div>
+
+      <div id="report-content" class="report-content hidden">
+
+        <div class="dial-row">
+          <div class="dial-wrap">
+            <svg class="dial" viewBox="0 0 160 160" aria-hidden="true">
+              <circle class="dial-track" cx="80" cy="80" r="70"></circle>
+              <circle class="dial-fill" id="dial-fill" cx="80" cy="80" r="70"></circle>
+            </svg>
+            <div class="dial-label">
+              <span class="dial-score" id="dial-score">0</span>
+              <span class="dial-unit">%</span>
+            </div>
+          </div>
+          <div class="dial-meta">
+            <div class="meta-row"><span class="meta-label">Subject</span><span class="meta-value" id="meta-filename">—</span></div>
+            <div class="meta-row"><span class="meta-label">Target role</span><span class="meta-value" id="meta-jobtitle">—</span></div>
+            <div class="meta-row"><span class="meta-label">Status</span><span class="meta-value" id="meta-status">—</span></div>
+          </div>
+        </div>
+
+        <div class="keyword-section">
+          <h3 class="keyword-heading matched-heading">Matched</h3>
+          <div class="chip-row" id="matched-chips"></div>
+        </div>
+
+        <div class="keyword-section">
+          <h3 class="keyword-heading gap-heading">Gaps</h3>
+          <div class="chip-row" id="missing-chips"></div>
+        </div>
+
+        <div class="ai-section hidden" id="ai-section">
+          <h3 class="keyword-heading">Suggestions</h3>
+          <p class="ai-text" id="ai-text"></p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- HISTORY -->
+  <section class="panel history-panel">
+    <div class="panel-eyebrow">03 / LOG</div>
+    <h2 class="panel-title">Scan history</h2>
+    <div id="history-empty" class="history-empty">No previous scans yet.</div>
+    <div class="history-list" id="history-list"></div>
+  </section>
+
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
