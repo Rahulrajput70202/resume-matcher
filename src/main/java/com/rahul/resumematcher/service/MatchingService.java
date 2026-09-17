@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
  * Rule-based resume <-> job description matcher.
  *
  * Combines:
+ 
  *  1) A curated technical-skill dictionary (matched as whole phrases/words), which catches
  *     multi-word terms like "spring boot" or "rest api" that naive tokenization would break apart.
  *  2) Frequency-based generic keyword extraction from the job description, to catch role-specific
