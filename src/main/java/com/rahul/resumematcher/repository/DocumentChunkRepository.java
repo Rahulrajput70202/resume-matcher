@@ -34,6 +34,25 @@ public class DocumentChunkRepository {
         );
     }
 
+            public void save(String resumeId, String documentName, String chunkText, float[] embedding) {
+
+            String sql = """
+                INSERT INTO document_chunks
+                (resume_id, document_name, chunk_text, embedding)
+                VALUES (?, ?, ?, ?::vector)
+                """;
+
+            String vector = toVectorString(embedding);
+
+            jdbcTemplate.update(
+                sql,
+                resumeId,
+                documentName,
+                chunkText,
+                vector
+            );
+            }
+
     // Find the most similar document chunks
     public List<Map<String, Object>> findSimilar(
             float[] queryEmbedding,
@@ -55,6 +74,35 @@ public class DocumentChunkRepository {
         return jdbcTemplate.queryForList(
                 sql,
                 vector,
+                vector,
+                limit
+        );
+    }
+
+    public List<Map<String, Object>> findSimilar(
+            float[] queryEmbedding,
+            String resumeId,
+            int limit) {
+
+        String sql = """
+                SELECT
+                    id,
+                    resume_id,
+                    document_name,
+                    chunk_text,
+                    embedding <=> ?::vector AS distance
+                FROM document_chunks
+                WHERE resume_id = ?
+                ORDER BY embedding <=> ?::vector
+                LIMIT ?
+                """;
+
+        String vector = toVectorString(queryEmbedding);
+
+        return jdbcTemplate.queryForList(
+                sql,
+                vector,
+                resumeId,
                 vector,
                 limit
         );

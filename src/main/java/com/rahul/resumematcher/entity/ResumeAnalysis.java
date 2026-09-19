@@ -21,6 +21,9 @@ public class ResumeAnalysis {
     @Column(nullable = false)
     private String fileName;
 
+    @Column(name = "resume_id", length = 36)
+    private String resumeId;
+
     @Column(nullable = false)
     private String jobTitle;
 
@@ -69,6 +72,14 @@ public class ResumeAnalysis {
 
     public void setFileName(String fileName) {
         this.fileName = fileName;
+    }
+
+    public String getResumeId() {
+        return resumeId;
+    }
+
+    public void setResumeId(String resumeId) {
+        this.resumeId = resumeId;
     }
 
     public String getJobTitle() {

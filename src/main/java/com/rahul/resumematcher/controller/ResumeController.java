@@ -7,13 +7,15 @@ import com.rahul.resumematcher.repository.ResumeAnalysisRepository;
 import com.rahul.resumematcher.repository.UserRepository;
 import com.rahul.resumematcher.service.AiMatchingService;
 import com.rahul.resumematcher.service.EmbeddingService;
-import com.rahul.resumematcher.service.MatchingService;
+import com.rahul.resumematcher.service.HybridMatchingService;
 import com.rahul.resumematcher.service.PdfParserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
@@ -24,8 +26,10 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/resume")
 public class ResumeController {
 
+        private static final Logger log = LoggerFactory.getLogger(ResumeController.class);
+
     private final PdfParserService pdfParserService;
-    private final MatchingService matchingService;
+        private final HybridMatchingService hybridMatchingService;
     private final AiMatchingService aiMatchingService;
     private final ResumeAnalysisRepository analysisRepository;
     private final UserRepository userRepository;
@@ -33,14 +37,14 @@ public class ResumeController {
 
     public ResumeController(
             PdfParserService pdfParserService,
-            MatchingService matchingService,
+            HybridMatchingService hybridMatchingService,
             AiMatchingService aiMatchingService,
             ResumeAnalysisRepository analysisRepository,
             UserRepository userRepository,
             EmbeddingService embeddingService) {
 
         this.pdfParserService = pdfParserService;
-        this.matchingService = matchingService;
+        this.hybridMatchingService = hybridMatchingService;
         this.aiMatchingService = aiMatchingService;
         this.analysisRepository = analysisRepository;
         this.userRepository = userRepository;
@@ -87,17 +91,24 @@ public class ResumeController {
         // 2. Store resume chunks + embeddings
         // ---------------------------------------
         String documentName = resumeFile.getOriginalFilename();
+        String resumeId = java.util.UUID.randomUUID().toString();
 
-        int chunkCount = embeddingService.processAndStoreDocument(
-                documentName,
-                resumeText
-        );
+        try {
+            embeddingService.processAndStoreDocument(
+                    resumeId,
+                    documentName,
+                    resumeText
+            );
+        } catch (RuntimeException ex) {
+            log.warn("Could not store resume embeddings for {}. Continuing with keyword fallback.", resumeId, ex);
+        }
 
         // ---------------------------------------
         // 3. Existing rule-based matching
         // ---------------------------------------
-        MatchingService.MatchResult result =
-                matchingService.match(
+        HybridMatchingService.HybridMatchResult result =
+                hybridMatchingService.match(
+                        resumeId,
                         resumeText,
                         jobDescription
                 );
@@ -119,8 +130,9 @@ public class ResumeController {
 
         analysis.setUser(user);
         analysis.setFileName(resumeFile.getOriginalFilename());
+        analysis.setResumeId(resumeId);
         analysis.setJobTitle(jobTitle);
-        analysis.setMatchScore(result.getScore());
+        analysis.setMatchScore(result.getFinalScore());
         analysis.setMatchedKeywords(result.getMatchedKeywords());
         analysis.setMissingKeywords(result.getMissingKeywords());
         analysis.setAiSuggestions(aiSuggestions);

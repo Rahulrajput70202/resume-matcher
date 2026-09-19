@@ -41,6 +41,21 @@ public class EmbeddingService {
         );
     }
 
+    public void createAndStoreEmbedding(
+            String resumeId,
+            String documentName,
+            String text) {
+
+        float[] embedding = createEmbedding(text);
+
+        documentChunkRepository.save(
+                resumeId,
+                documentName,
+                text,
+                embedding
+        );
+    }
+
     public List<Map<String, Object>> searchSimilar(
             String text,
             int limit) {
@@ -49,6 +64,20 @@ public class EmbeddingService {
 
         return documentChunkRepository.findSimilar(
                 queryEmbedding,
+                limit
+        );
+    }
+
+    public List<Map<String, Object>> searchSimilar(
+            String text,
+            String resumeId,
+            int limit) {
+
+        float[] queryEmbedding = createEmbedding(text);
+
+        return documentChunkRepository.findSimilar(
+                queryEmbedding,
+                resumeId,
                 limit
         );
     }
@@ -62,6 +91,25 @@ public class EmbeddingService {
 
         for (String chunk : chunks) {
             createAndStoreEmbedding(
+                    documentName,
+                    chunk
+            );
+        }
+
+        return chunks.size();
+    }
+
+    public int processAndStoreDocument(
+            String resumeId,
+            String documentName,
+            String text) {
+
+        List<String> chunks =
+                textChunkingService.splitIntoChunks(text);
+
+        for (String chunk : chunks) {
+            createAndStoreEmbedding(
+                    resumeId,
                     documentName,
                     chunk
             );
